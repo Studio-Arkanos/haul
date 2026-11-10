@@ -69,3 +69,45 @@
 3. Flux dropshipping minimal (email structuré `DROPSHIP_NOTIFY_EMAIL` puis API fournisseur)
 4. Supabase : `orders`, `order_items`, `stripe_events` (+ auth si comptes clients)
 5. Cloudflare Pages : preset Nitro, domaines, variables d’environnement, webhook de prod
+
+## D11 — Projet Supabase dédié « Haul » (pas le projet Arkanos)
+
+- **Contexte** : le brief laissait le choix entre site autonome ou intégration Arkanos.
+- **Décision** : projet Supabase **séparé** `Haul` (ref `choaryjjjbsekjwporjo`, eu-west-1, free), créé le 2026-11-10. Aucune donnée du site studio n'est touchée ; le rattachement ultérieur à Arkanos reste possible (même organisation).
+
+## D12 — Catalogue en code ; transactions en base
+
+- **Décision** : une seule source de vérité produit (`src/lib/products.ts`, typée, versionnée). Supabase ne stocke que les **transactions et livraisons** (`orders`, `order_items`, `digital_deliveries`, `stripe_events`, `profiles`). Pas de sync de catalogue à maintenir.
+- **Écarté** : table `products` + back-office — inutile pour 6 produits ; à ajouter quand le catalogue dépassera ~30 références.
+
+## D13 — Panier embarqué dans `session.metadata.cart`
+
+- **Contexte** : le webhook ne doit pas rappeler l'API Stripe (latence, egress, échec).
+- **Décision** : `checkout.post.ts` compacte le panier (`[{id,qty,type}]`, ~150 car.) dans `metadata.cart` (limite Stripe 500 car./valeur). Le webhook reconstruit tout localement.
+
+## D14 — Webhook idempotent (Stripe rejoue les événements)
+
+- **Décision** : `stripe_events(id PK)` inséré **en dernier** ; upsert `orders` sur `stripe_session_id` ; `order_items` en delete+insert ; `digital_deliveries` en upsert `ignoreDuplicates` sur `(order_id, product_id)`. Tout avant `stripe_events` est rejouable sans doublon.
+
+## D15 — Livraison numérique : token unique → URL signée Storage
+
+- **Décision** : bucket privé `digital-products` ; `/api/download?token=` valide le token (existence + expiration 30 j), incrémente `download_count`, puis 302 vers une URL signée (120 s). Repli local `storage/digital/*.pdf` en dev — les placeholders sont générés par `scripts/generate_placeholders.py` et gitignorés.
+- **Écarté** : envoi d'email avec pièce jointe (limite de taille Mailgun/Resend, friction) ; lien public permanent (fuite).
+
+## D16 — Auth email/mot de passe, autoconfirm activé
+
+- **Décision** : `mailer_autoconfirm=true` pour que les comptes fonctionnent sans SMTP. En production : SMTP propre + `false` (sinon n'importe quel email s'inscrit en le possédant). `site_url`/allow list pointent sur localhost tant que le domaine final n'est pas choisi.
+
+## D17 — RLS vérifiée par simulation JWT (2026-11-10)
+
+- **Test** : `set role authenticated` + `request.jwt.claims` avec email du propriétaire → voit 1 commande / 3 lignes / 2 livraisons / 0 événement ; avec un autre email → 0 ligne partout. `stripe_events` sans policy = deny-all client. Nettoyé ensuite (base vierge).
+
+## D18 — Limite d'egress du sandbox Arena
+
+- **Constat** : ce sandbox ne peut joindre ni `*.supabase.co` ni `api.stripe.com` (HTTP 000) — seuls GitHub/npm/pypi passent. Le checkout réel et le webhook vers Supabase sont donc non exécutables ICI ; ils fonctionneront en local chez l'utilisateur et en production (Cloudflare).
+- **Mitigations appliquées** : logique webhook rejouable sans API Stripe (D13) ; vérification du schéma et du RLS via SQL direct (D17) ; livraison testée sur le chemin de repli local ; `scripts/forge-webhook.mjs` pour reproduire le test complet en local chez l'utilisateur.
+
+## D19 — Le preview Arena : limites côté API
+
+- Le navigateur de l'utilisateur joint directement `*.supabase.co` (auth + commandes) → OK même ici.
+- Les routes `/api/*` tournent dans le sandbox → egress restreinte → indisponibles jusqu'au déploiement ou à l'exécution locale.
