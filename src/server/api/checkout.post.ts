@@ -1,6 +1,6 @@
 import { createError, defineEventHandler, readBody } from 'h3'
 import { z } from 'zod'
-import { getProductById } from '../../lib/products'
+import { getProductById, type ProductType } from '../../lib/products'
 import { getStripe } from '../lib/stripe.server'
 
 const ItemSchema = z.object({
@@ -11,6 +11,7 @@ const ItemSchema = z.object({
 const BodySchema = z.object({
   items: z.array(ItemSchema).min(1, 'Panier vide').max(50),
   currency: z.enum(['eur', 'usd']).default('eur'),
+  email: z.string().email().max(254).optional(),
 })
 
 const ALLOWED_COUNTRIES = [
@@ -31,10 +32,11 @@ export default defineEventHandler(async (event) => {
       data: parsed.error.flatten(),
     })
   }
-  const { items, currency } = parsed.data
+  const { items, currency, email } = parsed.data
 
   // ── 2. Résolution SERVEUR des prix : le client n'envoie jamais de priceId ──
   const line_items: { price: string; quantity: number }[] = []
+  const cartMeta: { id: string; qty: number; type: ProductType }[] = []
   let hasPhysical = false
 
   for (const item of items) {
@@ -50,6 +52,7 @@ export default defineEventHandler(async (event) => {
       })
     }
     line_items.push({ price: priceId, quantity: item.quantity })
+    cartMeta.push({ id: product.id, qty: item.quantity, type: product.type })
     if (product.type === 'physical') hasPhysical = true
   }
 
@@ -66,6 +69,15 @@ export default defineEventHandler(async (event) => {
 
   const siteUrl = (process.env.SITE_URL || 'http://localhost:5173').replace(/\/$/, '')
 
+  // Le panier compact est embarqué dans la session : le webhook n'a pas à rappeler l'API Stripe.
+  // (Limite Stripe metadata : 500 caractères par valeur — largement suffisant ici.)
+  const cartJson = JSON.stringify(cartMeta)
+  const metadata: Record<string, string> = {
+    currency,
+    source: 'haul',
+    ...(cartJson.length <= 500 ? { cart: cartJson } : {}),
+  }
+
   const session = await stripe.checkout.sessions.create({
     mode: 'payment',
     line_items,
@@ -76,7 +88,8 @@ export default defineEventHandler(async (event) => {
     ...(hasPhysical
       ? { shipping_address_collection: { allowed_countries: ALLOWED_COUNTRIES } }
       : {}),
-    metadata: { currency, source: 'haul' },
+    ...(email ? { customer_email: email } : {}),
+    metadata,
   })
 
   if (!session.url) {

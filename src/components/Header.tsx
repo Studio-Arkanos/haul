@@ -1,8 +1,9 @@
 import { useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { Menu, ShoppingBag, X } from 'lucide-react'
+import { Menu, ShoppingBag, User, X } from 'lucide-react'
 import Logo from './Logo'
 import { useCart } from '../lib/cart'
+import { useAuth } from '../lib/auth'
 import { CURRENCIES } from '../lib/products'
 
 const NAV = [
@@ -13,6 +14,7 @@ const NAV = [
 
 export default function Header() {
   const { count, openCart, currency, setCurrency } = useCart()
+  const { user } = useAuth()
   const [menuOpen, setMenuOpen] = useState(false)
 
   return (
@@ -60,6 +62,19 @@ export default function Header() {
               </button>
             ))}
           </div>
+
+          {/* Compte */}
+          <Link
+            to="/compte"
+            aria-label={user ? 'Mon compte — connecté' : 'Mon compte — se connecter'}
+            title={user ? `Mon compte (${user.email})` : 'Mon compte'}
+            className="relative flex h-11 w-11 items-center justify-center rounded-xl border border-white/10 bg-navy-800 text-cream transition-colors hover:border-container/50 hover:text-container-light"
+          >
+            <User size={19} strokeWidth={2} />
+            {user && (
+              <span className="absolute right-1.5 top-1.5 h-2.5 w-2.5 rounded-full bg-emerald-400 ring-2 ring-navy-950" />
+            )}
+          </Link>
 
           {/* Panier */}
           <button

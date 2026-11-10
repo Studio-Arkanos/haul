@@ -15,6 +15,7 @@ import Home from './pages/Home'
 import Boutique from './pages/Boutique'
 import APropos from './pages/APropos'
 import Success from './pages/Success'
+import Compte from './pages/Compte'
 import type { ProductType } from './lib/products'
 
 function RootLayout() {
@@ -96,11 +97,18 @@ const successRoute = createRoute({
   },
 })
 
+const compteRoute = createRoute({
+  getParentRoute: () => rootRoute,
+  path: '/compte',
+  component: Compte,
+})
+
 const routeTree = rootRoute.addChildren([
   indexRoute,
   boutiqueRoute,
   aProposRoute,
   successRoute,
+  compteRoute,
 ])
 
 export const router = createRouter({

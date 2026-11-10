@@ -12,12 +12,14 @@ import {
   TriangleAlert,
 } from 'lucide-react'
 import { useCart } from '../lib/cart'
+import { useAuth } from '../lib/auth'
 import { formatPrice } from '../lib/format'
 import { startCheckout } from '../lib/checkout'
 
 export default function CartDrawer() {
   const { lines, count, subtotal, currency, isOpen, closeCart, setQuantity, remove, clear } =
     useCart()
+  const { user } = useAuth()
   const [busy, setBusy] = useState(false)
   const [error, setError] = useState<string | null>(null)
 
@@ -42,6 +44,7 @@ export default function CartDrawer() {
       const url = await startCheckout(
         lines.map(({ product, quantity }) => ({ id: product.id, quantity })),
         currency,
+        user?.email,
       )
       window.location.assign(url) // redirection Stripe Checkout (hosted)
     } catch (err) {

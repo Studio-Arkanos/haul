@@ -30,6 +30,7 @@ export default function Footer() {
               <li><Link to="/boutique" search={{ type: 'digital' }} className="transition-colors hover:text-cream">Produits numériques</Link></li>
               <li><Link to="/boutique" search={{ type: 'physical' }} className="transition-colors hover:text-cream">Dropshipping</Link></li>
               <li><Link to="/a-propos" className="transition-colors hover:text-cream">À propos</Link></li>
+              <li><Link to="/compte" className="transition-colors hover:text-cream">Mon compte</Link></li>
             </ul>
           </nav>
 

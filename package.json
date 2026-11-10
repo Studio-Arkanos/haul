@@ -9,9 +9,11 @@
     "preview": "vite preview",
     "nitro:dev": "nitro dev",
     "nitro:build": "nitro build",
-    "typecheck": "tsc"
+    "typecheck": "tsc",
+    "gen:placeholders": "python3 scripts/generate_placeholders.py"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.119.0",
     "@tanstack/react-router": "^1.58.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.441.0",

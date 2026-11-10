@@ -1,6 +1,13 @@
 import { useEffect, useState } from 'react'
 import { Link } from '@tanstack/react-router'
-import { CheckCircle2, Loader2, ArrowRight, Mail, TriangleAlert } from 'lucide-react'
+import {
+  CheckCircle2,
+  Loader2,
+  ArrowRight,
+  Mail,
+  TriangleAlert,
+  Download,
+} from 'lucide-react'
 
 interface SessionDetails {
   id: string
@@ -10,11 +17,23 @@ interface SessionDetails {
   customer_email: string | null
 }
 
+interface DownloadLink {
+  product_name: string
+  url: string
+  expires_at: string
+}
+
 type LoadState = 'idle' | 'loading' | 'ok' | 'error'
+type LinksState = 'idle' | 'polling' | 'ready' | 'none'
+
+const MAX_POLLS = 8
+const POLL_MS = 1500
 
 export default function Success({ sessionId }: { sessionId?: string }) {
   const [state, setState] = useState<LoadState>(sessionId ? 'loading' : 'idle')
   const [details, setDetails] = useState<SessionDetails | null>(null)
+  const [linksState, setLinksState] = useState<LinksState>(sessionId ? 'polling' : 'idle')
+  const [links, setLinks] = useState<DownloadLink[]>([])
 
   useEffect(() => {
     if (!sessionId) return
@@ -39,6 +58,39 @@ export default function Success({ sessionId }: { sessionId?: string }) {
     }
   }, [sessionId])
 
+  // Les liens arrivent dès que le webhook a enregistré la commande (quelques secondes).
+  useEffect(() => {
+    if (!sessionId) return
+    let cancelled = false
+    let attempts = 0
+    const timer = window.setInterval(async () => {
+      attempts += 1
+      try {
+        const res = await fetch(`/api/download-links?session_id=${encodeURIComponent(sessionId)}`)
+        if (!res.ok) throw new Error(String(res.status))
+        const data = (await res.json()) as { status: string; links: DownloadLink[] }
+        if (cancelled) return
+        if (data.status === 'ready') {
+          setLinks(data.links)
+          setLinksState(data.links.length > 0 ? 'ready' : 'none')
+          window.clearInterval(timer)
+        } else if (attempts >= MAX_POLLS) {
+          setLinksState('none')
+          window.clearInterval(timer)
+        }
+      } catch {
+        if (attempts >= MAX_POLLS) {
+          setLinksState('none')
+          window.clearInterval(timer)
+        }
+      }
+    }, POLL_MS)
+    return () => {
+      cancelled = true
+      window.clearInterval(timer)
+    }
+  }, [sessionId])
+
   const amount =
     details?.amount_total != null && details.currency
       ? new Intl.NumberFormat('fr-FR', {
@@ -60,9 +112,40 @@ export default function Success({ sessionId }: { sessionId?: string }) {
           Bienvenue à bord.
         </h1>
         <p className="mt-3 text-[15px] leading-relaxed text-steel-300">
-          Ton paiement est confirmé. Un email de confirmation part chez toi avec le reçu et — pour
-          les produits numériques — tes liens de téléchargement.
+          Ton paiement est confirmé. Retrouve ton reçu dans ta boîte mail — et tes produits
+          numériques ici même, juste en dessous.
         </p>
+
+        {/* ─── LIVRAISON NUMÉRIQUE IMMÉDIATE ─────────────────── */}
+        {linksState === 'polling' && (
+          <div className="mt-6 flex items-center justify-center gap-2 rounded-2xl border border-white/5 bg-navy-800/60 px-4 py-4 text-sm text-steel-300">
+            <Loader2 size={16} className="animate-spin text-container" />
+            Préparation de tes liens de téléchargement…
+          </div>
+        )}
+        {linksState === 'ready' && (
+          <div className="mt-6 rounded-2xl border border-container/30 bg-container/5 p-5 text-left">
+            <p className="text-[10px] font-extrabold uppercase tracking-[0.24em] text-container-light">
+              Tes téléchargements
+            </p>
+            <ul className="mt-3 space-y-2">
+              {links.map((link) => (
+                <li key={link.url}>
+                  <a
+                    href={link.url}
+                    className="flex items-center gap-2 rounded-xl bg-container px-4 py-3 text-sm font-extrabold text-navy-950 transition-colors hover:bg-container-light"
+                  >
+                    <Download size={18} />
+                    <span className="truncate">{link.product_name}</span>
+                  </a>
+                </li>
+              ))}
+            </ul>
+            <p className="mt-2.5 text-[10px] uppercase tracking-[0.18em] text-steel-400">
+              Liens valables 30 jours · aussi dispo dans ton compte
+            </p>
+          </div>
+        )}
 
         {/* Détail de la commande (si récupérable) */}
         {state === 'ok' && details && (
@@ -97,13 +180,16 @@ export default function Success({ sessionId }: { sessionId?: string }) {
 
         <div className="mt-8 flex flex-col items-center gap-3">
           <Link
-            to="/boutique"
+            to="/compte"
             className="inline-flex w-full items-center justify-center gap-2 rounded-xl bg-container px-6 py-4 font-extrabold text-navy-950 transition-colors hover:bg-container-light"
           >
-            Retour à la boutique <ArrowRight size={18} />
+            Voir mes commandes <ArrowRight size={18} />
           </Link>
-          <Link to="/" className="text-sm font-semibold text-steel-400 transition-colors hover:text-cream">
-            Retour à l’accueil
+          <Link
+            to="/boutique"
+            className="text-sm font-semibold text-steel-400 transition-colors hover:text-cream"
+          >
+            Retour à la boutique
           </Link>
         </div>
       </div>

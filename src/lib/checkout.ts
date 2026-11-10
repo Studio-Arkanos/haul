@@ -12,11 +12,12 @@ export interface CheckoutItem {
 export async function startCheckout(
   items: CheckoutItem[],
   currency: Currency,
+  email?: string,
 ): Promise<string> {
   const res = await fetch('/api/checkout', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify({ items, currency }),
+    body: JSON.stringify({ items, currency, ...(email ? { email } : {}) }),
   })
 
   const data: unknown = await res.json().catch(() => null)
