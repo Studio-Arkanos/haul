@@ -1,0 +1,106 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  color-scheme: dark;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  @apply bg-navy-950 font-display text-cream antialiased;
+}
+
+::selection {
+  background: #e85d04;
+  color: #0a1220;
+}
+
+/* Scrollbar discret, assorti au thème */
+::-webkit-scrollbar {
+  width: 10px;
+  height: 10px;
+}
+::-webkit-scrollbar-track {
+  background: #0f1c2e;
+}
+::-webkit-scrollbar-thumb {
+  background: #2a4566;
+  border-radius: 999px;
+}
+::-webkit-scrollbar-thumb:hover {
+  background: #3a5a82;
+}
+
+/* Texture « quai » : grille de points très subtile */
+.container-texture {
+  background-image: radial-gradient(circle at 1px 1px, rgba(244, 241, 234, 0.055) 1px, transparent 0);
+  background-size: 22px 22px;
+}
+
+/* Liseré orange type serre-joint de conteneur */
+.container-notch {
+  position: relative;
+}
+.container-notch::before {
+  content: '';
+  position: absolute;
+  left: 0;
+  top: 0;
+  bottom: 0;
+  width: 4px;
+  background: repeating-linear-gradient(
+    -45deg,
+    #e85d04 0 10px,
+    #dc2f02 10px 20px
+  );
+  border-radius: 4px 0 0 4px;
+}
+
+/* Bandeau défilant */
+@keyframes marquee {
+  from {
+    transform: translateX(0);
+  }
+  to {
+    transform: translateX(-50%);
+  }
+}
+.animate-marquee {
+  width: max-content;
+  animation: marquee 32s linear infinite;
+}
+.animate-marquee:hover {
+  animation-play-state: paused;
+}
+
+/* Coque flottante pour le badge hero */
+@keyframes bob {
+  0%,
+  100% {
+    transform: translateY(0);
+  }
+  50% {
+    transform: translateY(-8px);
+  }
+}
+.animate-bob {
+  animation: bob 5s ease-in-out infinite;
+}
+
+/* FAQ : masquer le marqueur natif des <details> */
+summary::-webkit-details-marker {
+  display: none;
+}
+details > summary {
+  list-style: none;
+}
+details[open] .faq-chevron {
+  transform: rotate(45deg);
+}
+.faq-chevron {
+  transition: transform 0.25s ease;
+}

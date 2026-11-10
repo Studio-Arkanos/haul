@@ -8,9 +8,12 @@
     "build": "tsc && vite build",
     "preview": "vite preview",
     "nitro:dev": "nitro dev",
-    "nitro:build": "nitro build"
+    "nitro:build": "nitro build",
+    "typecheck": "tsc",
+    "gen:placeholders": "python3 scripts/generate_placeholders.py"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.119.0",
     "@tanstack/react-router": "^1.58.0",
     "clsx": "^2.1.1",
     "lucide-react": "^0.441.0",
@@ -20,11 +23,12 @@
     "zod": "^3.23.8"
   },
   "devDependencies": {
+    "@types/node": "^26.6.6",
     "@types/react": "^18.3.5",
     "@types/react-dom": "^18.3.0",
     "@vitejs/plugin-react": "^4.3.1",
     "autoprefixer": "^10.4.20",
-    "nitro": "^2.9.7",
+    "nitropack": "^2.9.7",
     "postcss": "^8.4.47",
     "tailwindcss": "^3.4.13",
     "typescript": "^5.6.2",

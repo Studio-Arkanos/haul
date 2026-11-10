@@ -1,0 +1,22 @@
+import { StrictMode } from 'react'
+import { createRoot } from 'react-dom/client'
+import { RouterProvider } from '@tanstack/react-router'
+import { CartProvider } from './lib/cart'
+import { AuthProvider } from './lib/auth'
+import { router } from './router'
+import './index.css'
+
+const rootEl = document.getElementById('root')
+if (!rootEl) {
+  throw new Error('#root introuvable — vérifie index.html')
+}
+
+createRoot(rootEl).render(
+  <StrictMode>
+    <AuthProvider>
+      <CartProvider>
+        <RouterProvider router={router} />
+      </CartProvider>
+    </AuthProvider>
+  </StrictMode>,
+)
