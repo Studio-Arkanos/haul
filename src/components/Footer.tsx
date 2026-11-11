@@ -14,9 +14,14 @@ export default function Footer() {
               La boutique « tout ce qui doit arriver » : guides et templates en téléchargement
               immédiat, plus une sélection de pièces en dropshipping — payables en EUR ou USD.
             </p>
-            <p className="mt-4 flex items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-steel-400">
+            <a
+              href="https://github.com/Studio-Arkanos"
+              target="_blank"
+              rel="noreferrer"
+              className="mt-4 flex w-fit items-center gap-2 text-xs font-medium uppercase tracking-[0.18em] text-steel-400 transition-colors hover:text-cream"
+            >
               <Anchor size={13} className="text-container" /> Studio Arkanos · Lomé, Togo
-            </p>
+            </a>
           </div>
 
           {/* Explorer */}
