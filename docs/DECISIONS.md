@@ -111,3 +111,16 @@
 
 - Le navigateur de l'utilisateur joint directement `*.supabase.co` (auth + commandes) → OK même ici.
 - Les routes `/api/*` tournent dans le sandbox → egress restreinte → indisponibles jusqu'au déploiement ou à l'exécution locale.
+
+## D20 — Liaison ARKANOS ⇄ HAUL : liens croisés, comptes séparés (2026-11-11)
+
+- **Contexte** : Haul est en ligne (haul.arkanos-innovation.workers.dev, Cloudflare Workers) ; le site ARKANOS.SYS (statique, Drive `site-arkanos-2.0.zip`) existe en parallèle, même hébergeur.
+- **Décision retenue — niveau 1 (fait)** :
+  - ARKANOS → HAUL : carte « Haul » dans la section Nos systèmes (grille g4), lien « Haul » dans la nav, lien « HAUL — la boutique » dans le footer. Diff exact: 3 fichiers (index.html, assets/js/site.js). Livré via `site-arkanos-2.0-haul-link.zip` + `MISE-A-JOUR-haul-link.md` dans le Drive (dossier Arkanos), sans toucher aux archives sources.
+  - HAUL → ARKANOS : le footer Haul lie désormais « Studio Arkanos » vers github.com/Studio-Arkanos.
+- **Volontairement non fait — niveau 2 (à trancher plus tard)** : unification des comptes (SSO / même projet Supabase / même origine). Projets Auth distincts (Haul = projet dédié, D11), RLS et rôles incompatibles sans refonte ; pas de gain immédiat. Réévaluer si la boutique devient majeure.
+- **Optionnel — niveau 3** : servir HAUL sous le même domaine (reverse proxy path-based `/haul` ou sous-domaine) ; uniquement config Cloudflare, sans code. À faire si le domaine arkanos-innovation (ou un domaine custom) est tranché.
+
+## D21 — HAUL hébergé sur workers.dev : `.workers.dev` par défaut
+
+- Le site est déployé sur `haul.arkanos-innovation.workers.dev` (branche/domaine par défaut du compte Cloudflare). Pour relier au niveau DNS : soit ajouter une route sur le sous-domaine `haul.` d'un domaine final, soit un chemin `/boutique` en rewrite Workers — les deux sans changement applicatif.
